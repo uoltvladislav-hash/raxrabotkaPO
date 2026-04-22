@@ -1,0 +1,163 @@
+import tkinter as tk
+from tkinter import messagebox
+import sys
+from io import StringIO
+
+def function():
+    # Перенаправляем вывод print в строку
+    old_stdout = sys.stdout
+    sys.stdout = captured_output = StringIO()
+
+    try:
+        a = float(input("ведите число: a "))
+        b = float(input("введите число: b "))
+        c = float(input("введите число: c "))
+        D = b ** 2 - 4 * a * c
+        print("Дискириминант", D)
+
+        if D > 0:
+            x1 = (-b + D ** 0.5) / (2 * a)
+            x2 = (-b - D ** 0.5) / (2 * a)
+            print("x1 =", x1)
+            print("x2 =", x2)
+
+        elif D == 0:
+            x = -b / (2 * a)
+            print("x=", x)
+
+        else:
+            print("Корней нет")
+
+    finally:
+        # Возвращаем стандартный вывод
+        sys.stdout = old_stdout
+
+    return captured_output.getvalue()
+
+
+# =============================================
+# ГРАФИЧЕСКИЙ ИНТЕРФЕЙС
+# =============================================
+def on_solve_click():
+    """Эта функция срабатывает при нажатии кнопки 'Решить'"""
+    try:
+        # Получаем числа из полей ввода
+        a_val = entry_a.get()
+        b_val = entry_b.get()
+        c_val = entry_c.get()
+
+        # Проверка что введены числа
+        float(a_val)
+        float(b_val)
+        float(c_val)
+
+        # Проверка на ноль для a
+        if float(a_val) == 0:
+            messagebox.showerror("Ошибка", "Коэффициент 'a' не должен быть равен нулю!\nЭто не квадратное уравнение.")
+            return
+
+        # Подменяем стандартный input
+        import builtins
+        original_input = builtins.input
+
+        # Создаем список с нашими значениями для input
+        input_values = [a_val, b_val, c_val]
+        input_index = 0
+
+        def mock_input(prompt=""):
+            nonlocal input_index
+            if input_index < len(input_values):
+                value = input_values[input_index]
+                input_index += 1
+                print(prompt + value)  # Показываем в консоли что ввели
+                return value
+            return ""
+
+        # Подменяем input
+        builtins.input = mock_input
+
+        try:
+            # Вызываем функцию с оригинальным кодом
+            result = function()
+
+            # Очищаем поле вывода и вставляем результат
+            text_result.delete("1.0", tk.END)
+            text_result.insert(tk.END, result)
+
+        finally:
+            # Возвращаем оригинальный input
+            builtins.input = original_input
+
+    except ValueError:
+        messagebox.showerror("Ошибка ввода",
+                             "Пожалуйста, вводите только числа.\nДробную часть пишите через точку (например 2.5)")
+
+
+# Создаем главное окно
+window = tk.Tk()
+window.title("Квадратное уравнение (Решатель)")
+window.geometry("450x400")
+window.resizable(False, False)
+
+# Заголовок
+label_title = tk.Label(window, text="Решение: a·x² + b·x + c = 0", font=("Arial", 14, "bold"))
+label_title.pack(pady=10)
+
+# Рамка для ввода
+frame_input = tk.Frame(window)
+frame_input.pack(pady=10)
+
+# Поле A
+tk.Label(frame_input, text="a =", font=("Arial", 12)).grid(row=0, column=0, padx=5, pady=5, sticky="e")
+entry_a = tk.Entry(frame_input, width=10, font=("Arial", 12), justify="center")
+entry_a.grid(row=0, column=1, padx=5, pady=5)
+entry_a.insert(0, "1")
+
+# Поле B
+tk.Label(frame_input, text="b =", font=("Arial", 12)).grid(row=1, column=0, padx=5, pady=5, sticky="e")
+entry_b = tk.Entry(frame_input, width=10, font=("Arial", 12), justify="center")
+entry_b.grid(row=1, column=1, padx=5, pady=5)
+entry_b.insert(0, "-3")
+
+# Поле C
+tk.Label(frame_input, text="c =", font=("Arial", 12)).grid(row=2, column=0, padx=5, pady=5, sticky="e")
+entry_c = tk.Entry(frame_input, width=10, font=("Arial", 12), justify="center")
+entry_c.grid(row=2, column=1, padx=5, pady=5)
+entry_c.insert(0, "2")
+
+# Кнопка "Решить"
+btn_solve = tk.Button(window, text="РЕШИТЬ", font=("Arial", 12, "bold"), bg="#4CAF50", fg="white",
+                      padx=20, pady=5, command=on_solve_click)
+btn_solve.pack(pady=15)
+
+# Поле для вывода ответа
+label_answer = tk.Label(window, text="Результат:", font=("Arial", 11, "bold"))
+label_answer.pack()
+
+text_result = tk.Text(window, height=8, width=50, font=("Courier New", 11),
+                      bg="#f5f5f5", relief="ridge", borderwidth=2)
+text_result.pack(pady=5)
+
+
+# Кнопка очистки
+def clear_fields():
+    entry_a.delete(0, tk.END)
+    entry_b.delete(0, tk.END)
+    entry_c.delete(0, tk.END)
+    text_result.delete("1.0", tk.END)
+    entry_a.insert(0, "1")
+    entry_b.insert(0, "-3")
+    entry_c.insert(0, "2")
+
+
+btn_clear = tk.Button(window, text="Очистить", font=("Arial", 10),
+                      command=clear_fields)
+btn_clear.pack(pady=5)
+
+# Подсказка внизу
+label_hint = tk.Label(window, text="Введите коэффициенты и нажмите РЕШИТЬ",
+                      font=("Arial", 8), fg="gray")
+label_hint.pack(side="bottom", pady=10)
+
+# Запуск окна
+window.mainloop()
